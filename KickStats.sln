@@ -1,0 +1,27 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KickStats", "KickStats\KickStats.csproj", "{8B2A6AE1-ABC0-4C79-A3D4-C30416B94A1E}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{A215455C-1890-4542-B9B7-3C1382D20024}"
+	ProjectSection(SolutionItems) = preProject
+		compose.yaml = compose.yaml
+	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KickStatsTests", "KickStatsTests\KickStatsTests.csproj", "{AAA3391B-6365-400A-ABCB-44E001761645}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{8B2A6AE1-ABC0-4C79-A3D4-C30416B94A1E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8B2A6AE1-ABC0-4C79-A3D4-C30416B94A1E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8B2A6AE1-ABC0-4C79-A3D4-C30416B94A1E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8B2A6AE1-ABC0-4C79-A3D4-C30416B94A1E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{AAA3391B-6365-400A-ABCB-44E001761645}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AAA3391B-6365-400A-ABCB-44E001761645}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AAA3391B-6365-400A-ABCB-44E001761645}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AAA3391B-6365-400A-ABCB-44E001761645}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal

@@ -1,0 +1,6 @@
+﻿services:
+  kickstats:
+    image: kickstats
+    build:
+      context: .
+      dockerfile: KickStats/Dockerfile
