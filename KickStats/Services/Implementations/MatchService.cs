@@ -5,25 +5,34 @@ using KickStats.Services.Interfaces;
 
 namespace KickStats.Services.Implementations;
 
-public class MatchService(IMatchDataAccess dataAccess) : IMatchService
+public class MatchService(IMatchDataAccess matchDataAccess, IPlayTableDataAccess playTableDataAccess ) : IMatchService
 {
     public async Task<Match> CreateMatchAsync(Guid playTableId, DateTime matchDate)
     {
+        var playTable = await playTableDataAccess.GetByIdAsync(playTableId);
+        if (playTable == null)
+        {
+            throw new KeyNotFoundException($"PlayTable with ID {playTableId} not found.");
+        }
         var match = new Match()
         {
-            PlayTableId = playTableId,
+            PlayTable = playTable,
             Team1 = new Team(),
             Team2 = new Team(),
             State = MatchState.Open
         };
-        await dataAccess.AddAsync(match);
-        await dataAccess.SaveChangesAsync();
+        await matchDataAccess.AddAsync(match);
+        await matchDataAccess.SaveChangesAsync();
         return match;
     }
 
     public async Task<Match> GetMatchByIdAsync(Guid matchId)
     {
-        var match = await dataAccess.GetByIdAsync(matchId);
+        var match = await matchDataAccess.GetByIdAsync(matchId);
+        if (match == null)
+        {
+            throw new KeyNotFoundException($"Match with ID {matchId} not found.");
+        }
         return match;
     }
 
@@ -38,8 +47,8 @@ public class MatchService(IMatchDataAccess dataAccess) : IMatchService
 
        match.StartTime = DateTime.Now;
        match.State = MatchState.Running;
-       await dataAccess.UpdateAsync(match);
-       await dataAccess.SaveChangesAsync();
+       await matchDataAccess.UpdateAsync(match);
+       await matchDataAccess.SaveChangesAsync();
     }
 
     public async Task StartMatchRandomizedAsync(Guid matchId)
@@ -57,27 +66,29 @@ public class MatchService(IMatchDataAccess dataAccess) : IMatchService
         match.Team2.Players.Add(joinedPlayers[rnd.Next(0, joinedPlayers.Count)]);
         match.Team2.Players.Add(joinedPlayers[rnd.Next(0, joinedPlayers.Count)]);
 
-        await dataAccess.UpdateAsync(match);
-        await dataAccess.SaveChangesAsync();
+        await matchDataAccess.UpdateAsync(match);
+        await matchDataAccess.SaveChangesAsync();
     }
 
-    public async Task CloseMatchAsync(Guid matchId, int team1Score, int team2Score)
+    public async Task CloseMatchAsync(Guid matchId, int team1Score, int team2Score, List<PlayerMatchStats> matchStats)
     {
-        var match = await dataAccess.GetByIdAsync(matchId);
+        var match = await matchDataAccess.GetByIdAsync(matchId);
 
         if (match == null)
             throw new KeyNotFoundException($"Match with ID {matchId} not found.");
         match.EndTime = DateTime.Now;
         match.Team1Score = team1Score;
         match.Team2Score = team2Score;
-        await dataAccess.UpdateAsync(match);
-        await dataAccess.SaveChangesAsync();
+        match.PlayerStats = matchStats;
+        match.State = MatchState.Finished;
+        await matchDataAccess.UpdateAsync(match);
+        await matchDataAccess.SaveChangesAsync();
     }
 
 
     public async Task JoinMatchAsync(Guid matchId, ApplicationUser player, int teamNumber)
     {
-        var match = await dataAccess.GetByIdAsync(matchId);
+        var match = await matchDataAccess.GetByIdAsync(matchId);
 
         if (teamNumber == 1)
         {
@@ -103,7 +114,7 @@ public class MatchService(IMatchDataAccess dataAccess) : IMatchService
 
     public async Task LeaveMatchAsync(Guid matchId, ApplicationUser player, int teamNumber)
     {
-        var match = await dataAccess.GetByIdAsync(matchId);
+        var match = await matchDataAccess.GetByIdAsync(matchId);
 
         if (teamNumber == 1)
         {
@@ -129,8 +140,8 @@ public class MatchService(IMatchDataAccess dataAccess) : IMatchService
         {
             throw new ArgumentException("Invalid team number.");
         }
-        await dataAccess.UpdateAsync(match);
-        await dataAccess.SaveChangesAsync();
+        await matchDataAccess.UpdateAsync(match);
+        await matchDataAccess.SaveChangesAsync();
     }
 
 }

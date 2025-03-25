@@ -60,7 +60,4 @@ public class PlayTableService(IPlayTableDataAccess playTableDataAccess) : IPlayT
     {
         return await _playTableDataAccess.GetMatchesForPlayTableAsync(playTableId);
     }
-
-
-
 }

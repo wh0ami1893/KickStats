@@ -9,9 +9,12 @@ public class MatchDataAccess(ApplicationDbContext dbContext) : IMatchDataAccess
 {
     public ApplicationDbContext _dbContext { get; set; } = dbContext ?? throw new ArgumentNullException(nameof(dbContext));
 
-    public async Task<Match> GetByIdAsync(Guid id)
+    public async Task<Match?> GetByIdAsync(Guid id)
     {
         return await _dbContext.Matches
+            .Include(m => m.PlayTable)
+            .Include(m => m.Team1)
+            .Include(m => m.Team2)
             .FirstOrDefaultAsync(pt => pt.Id == id);
     }
 

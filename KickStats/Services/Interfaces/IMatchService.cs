@@ -9,6 +9,6 @@ public interface IMatchService
     Task<Match> GetMatchByIdAsync(Guid matchId);
     Task StartMatchAsync(Guid matchId);
     Task StartMatchRandomizedAsync(Guid matchId);
-    Task CloseMatchAsync(Guid matchId, int team1Score, int team2Score);
+    Task CloseMatchAsync(Guid matchId, int team1Score, int team2Score, List<PlayerMatchStats> matchStats);
     Task JoinMatchAsync(Guid matchId, ApplicationUser player, int teamNumber);
 }

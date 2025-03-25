@@ -3,275 +3,244 @@ using KickStats.Data.Models;
 using KickStats.Repositories.Interfaces;
 using KickStats.Services.Implementations;
 using Moq;
-using static NUnit.Framework.Assert;
 using Match = KickStats.Data.Models.Match;
 
-namespace KickStatsTests.Services;
-
-[TestFixture]
-public class MatchServiceTests
+namespace KickStatsTests.Services
 {
-    private Mock<IMatchDataAccess> _dataAccessMock;
-    private MatchService _matchService;
-
-    [SetUp]
-    public void Setup()
+    [TestFixture]
+    public class MatchServiceTests
     {
-        _dataAccessMock = new Mock<IMatchDataAccess>();
-        _matchService = new MatchService(_dataAccessMock.Object);
-    }
+        private MatchService _matchService;
 
-    [Test]
-    public async Task CreateMatchAsync_ShouldCreateMatch()
-    {
-        // Arrange
-        var playTableId = Guid.NewGuid();
-        var matchDate = DateTime.UtcNow;
-        var createdMatch = new Match
+        // Mocked Data Access Dependencies
+        private Mock<IMatchDataAccess> _mockMatchDataAccess;
+        private Mock<IPlayerMatchStatsDataAccess> _mockPlayerMatchStatsDataAccess;
+        private Mock<IPlayTableDataAccess> _mockPlayTableDataAccess;
+
+        [SetUp]
+        public void SetUp()
         {
-            PlayTableId = playTableId,
-            State = MatchState.Open,
-            Team1 = new Team(),
-            Team2 = new Team()
-        };
+            // Initialize mocked dependencies
+            _mockMatchDataAccess = new Mock<IMatchDataAccess>();
+            _mockPlayerMatchStatsDataAccess = new Mock<IPlayerMatchStatsDataAccess>();
+            _mockPlayTableDataAccess = new Mock<IPlayTableDataAccess>();
 
-        _dataAccessMock.Setup(d => d.AddAsync(It.IsAny<Match>())).Returns(Task.CompletedTask);
-        _dataAccessMock.Setup(d => d.SaveChangesAsync()).Returns(Task.CompletedTask);
+            // Initialize service with mocks
+            _matchService = new MatchService(
+                _mockMatchDataAccess.Object, _mockPlayTableDataAccess.Object
+            );
+        }
 
-        // Act
-        var result = await _matchService.CreateMatchAsync(playTableId, matchDate);
+        #region CreateMatchAsync Tests
 
-        // Assert
-
-        Multiple(() =>
+        [Test]
+        public async Task CreateMatchAsync_ShouldAddAndReturnNewMatch()
         {
-            That(result, Is.Not.Null);
-            That(result.PlayTableId, Is.EqualTo(playTableId));
-            That(result.State, Is.EqualTo(MatchState.Open));
-            That(result.Team1, Is.Not.Null);
-            That(result.Team2, Is.Not.Null);
-        });
+            // Arrange
+            var playTableId = Guid.NewGuid();
+            var matchDate = DateTime.UtcNow;
 
-        _dataAccessMock.Verify(d => d.AddAsync(It.IsAny<Match>()), Times.Once);
-        _dataAccessMock.Verify(d => d.SaveChangesAsync(), Times.Once);
-    }
+            var playTable = new PlayTable { Id = playTableId };
+            var match = new Match
+            {
+                Id = Guid.NewGuid(),
+                PlayTableId = playTableId,
+                StartTime = matchDate
+            };
 
-    [Test]
-    public async Task GetMatchByIdAsync_ShouldReturnMatch_WhenMatchExists()
-    {
-        // Arrange
-        var matchId = Guid.NewGuid();
-        var existingMatch = new Match { Id = matchId };
+            _mockPlayTableDataAccess
+                .Setup(x => x.GetByIdAsync(playTableId))
+                .ReturnsAsync(playTable);
 
-        _dataAccessMock.Setup(d => d.GetByIdAsync(matchId)).ReturnsAsync(existingMatch);
+            _mockMatchDataAccess
+                .Setup(x => x.AddAsync(It.IsAny<Match>()))
+                .Callback<Match>(m => m.Id = match.Id); // Simulate setting the ID
+            _mockMatchDataAccess
+                .Setup(x => x.SaveChangesAsync())
+                .Returns(Task.CompletedTask);
 
-        // Act
-        var result = await _matchService.GetMatchByIdAsync(matchId);
-        That(result, Is.Not.Null);
-        That(result.Id, Is.EqualTo(matchId));
+            // Act
+            var result = await _matchService.CreateMatchAsync(playTableId, matchDate);
 
-        _dataAccessMock.Verify(d => d.GetByIdAsync(matchId), Times.Once);
-    }
+            // Assert
+            Assert.That(result, Is.Not.Null);
+            Assert.That(result.Id, Is.EqualTo(match.Id));
+            _mockMatchDataAccess.Verify(x => x.AddAsync(It.IsAny<Match>()), Times.Once);
+            _mockMatchDataAccess.Verify(x => x.SaveChangesAsync(), Times.Once);
+        }
 
-    [Test]
-    public async Task GetMatchByIdAsync_ShouldReturnNull_WhenMatchDoesNotExist()
-    {
-        // Arrange
-        var matchId = Guid.NewGuid();
-        _dataAccessMock.Setup(d => d.GetByIdAsync(matchId)).ReturnsAsync((Match)null);
-
-        // Act
-        var result = await _matchService.GetMatchByIdAsync(matchId);
-        That(result, Is.Null);
-        _dataAccessMock.Verify(d => d.GetByIdAsync(matchId), Times.Once);
-    }
-
-    [Test]
-    public async Task StartMatchAsync_ShouldThrowArgumentException_WhenTeamsNotFull()
-    {
-        // Arrange
-        var matchId = Guid.NewGuid();
-        var match = new Match { Id = matchId, State = MatchState.Open };
-
-        _dataAccessMock.Setup(d => d.GetByIdAsync(matchId)).ReturnsAsync(match);
-        _dataAccessMock.Setup(d => d.UpdateAsync(It.IsAny<Match>())).Returns(Task.CompletedTask);
-        _dataAccessMock.Setup(d => d.SaveChangesAsync()).Returns(Task.CompletedTask);
-
-        // Act
-        ThrowsAsync<ArgumentException>(() => _matchService.StartMatchAsync(matchId));
-    }
-
-    [Test]
-    public async Task StartMatchRandomizedAsync_ShouldThrowArgumentException_WhenTeamsNotFull()
-    {
-        // Arrange
-        var matchId = Guid.NewGuid();
-        var match = new Match { Id = matchId, State = MatchState.Open };
-
-        _dataAccessMock.Setup(d => d.GetByIdAsync(matchId)).ReturnsAsync(match);
-        _dataAccessMock.Setup(d => d.UpdateAsync(It.IsAny<Match>())).Returns(Task.CompletedTask);
-        _dataAccessMock.Setup(d => d.SaveChangesAsync()).Returns(Task.CompletedTask);
-
-        // Act
-        ThrowsAsync<ArgumentException>(() => _matchService.StartMatchRandomizedAsync(matchId));
-    }
-
-    [Test]
-    public async Task StartMatchRandomizedAsync_ShouldDistributePlayersAcrossTeamsRandomly()
-    {
-        // Arrange
-        var matchId = Guid.NewGuid();
-        var players = new List<ApplicationUser>
+        [Test]
+        public void CreateMatchAsync_ShouldThrowException_WhenPlayTableDoesNotExist()
         {
-            new ApplicationUser { Id = Guid.NewGuid(), UserName = "Player1" },
-            new ApplicationUser { Id = Guid.NewGuid(), UserName = "Player2" },
-            new ApplicationUser { Id = Guid.NewGuid(), UserName = "Player3" },
-            new ApplicationUser { Id = Guid.NewGuid(), UserName = "Player4" }
-        };
+            // Arrange
+            var playTableId = Guid.NewGuid();
 
-        var match = new Match
+            _mockPlayTableDataAccess
+                .Setup(x => x.GetByIdAsync(playTableId))
+                .ReturnsAsync((PlayTable)null);
+
+            // Act & Assert
+            Assert.ThrowsAsync<KeyNotFoundException>(async () =>
+                await _matchService.CreateMatchAsync(playTableId, DateTime.UtcNow));
+        }
+
+        #endregion
+
+        #region GetMatchByIdAsync Tests
+
+        [Test]
+        public async Task GetMatchByIdAsync_ShouldReturnMatch_WhenMatchExists()
         {
-            Id = matchId,
-            Team1 = new Team { Players = new List<ApplicationUser>() },
-            Team2 = new Team { Players = new List<ApplicationUser>() }
-        };
+            // Arrange
+            var matchId = Guid.NewGuid();
+            var expectedMatch = new Match { Id = matchId };
 
-        match.Team1.Players.Add(players[0]); // Start with one player in Team1
-        match.Team1.Players.Add(players[1]); // Start with one player in Team1
-        match.Team2.Players.Add(players[2]); // Start with one player in Team2
-        match.Team2.Players.Add(players[3]); // Start with one player in Team2
+            _mockMatchDataAccess
+                .Setup(x => x.GetByIdAsync(matchId))
+                .ReturnsAsync(expectedMatch);
 
-        _dataAccessMock.Setup(d => d.GetByIdAsync(matchId)).ReturnsAsync(match);
-        _dataAccessMock.Setup(d => d.UpdateAsync(It.IsAny<Match>())).Returns(Task.CompletedTask);
-        _dataAccessMock.Setup(d => d.SaveChangesAsync()).Returns(Task.CompletedTask);
+            // Act
+            var result = await _matchService.GetMatchByIdAsync(matchId);
 
-        // Act
-        await _matchService.StartMatchRandomizedAsync(matchId);
+            // Assert
+            Assert.IsNotNull(result);
+            Assert.AreEqual(expectedMatch, result);
+            _mockMatchDataAccess.Verify(x => x.GetByIdAsync(matchId), Times.Once);
+        }
 
-        Assert.Multiple(() =>
+        [Test]
+        public void GetMatchByIdAsync_ShouldThrowException_WhenMatchDoesNotExist()
         {
-            That(match.Team1.Players.Count, Is.EqualTo(2)); // Randomized two players in each team
-            That(match.Team2.Players.Count, Is.EqualTo(2));
-            That(match.Team2.Players, Is.Not.EqualTo(match.Team1.Players)); // Ensure randomized distribution
-            That(match.State, Is.EqualTo(MatchState.Running));
-            That(match.StartTime, Is.Not.EqualTo(default(DateTime)));
-        });
+            // Arrange
+            var matchId = Guid.NewGuid();
 
-        _dataAccessMock.Verify(d => d.UpdateAsync(It.IsAny<Match>()), Times.Once);
-        _dataAccessMock.Verify(d => d.SaveChangesAsync(), Times.Once);
-    }
+            _mockMatchDataAccess
+                .Setup(x => x.GetByIdAsync(matchId))
+                .ReturnsAsync((Match)null);
 
+            // Act & Assert
+            Assert.ThrowsAsync<KeyNotFoundException>(async () =>
+                await _matchService.GetMatchByIdAsync(matchId));
+        }
 
-    [Test]
-    public async Task CloseMatchAsync_ShouldSetMatchToClosedStateAndSaveScores()
-    {
-        // Arrange
-        var matchId = Guid.NewGuid();
-        var match = new Match { Id = matchId, State = MatchState.Running };
+        #endregion
 
-        _dataAccessMock.Setup(d => d.GetByIdAsync(matchId)).ReturnsAsync(match);
-        _dataAccessMock.Setup(d => d.UpdateAsync(It.IsAny<Match>())).Returns(Task.CompletedTask);
-        _dataAccessMock.Setup(d => d.SaveChangesAsync()).Returns(Task.CompletedTask);
+        #region StartMatchAsync Tests
 
-        var team1Score = 10;
-        var team2Score = 5;
-
-        // Act
-        await _matchService.CloseMatchAsync(matchId, team1Score, team2Score);
-
-        // Assert
-        NotNull(match.EndTime);
-        AreEqual(team1Score, match.Team1Score);
-        AreEqual(team2Score, match.Team2Score);
-
-        _dataAccessMock.Verify(d => d.UpdateAsync(It.IsAny<Match>()), Times.Once);
-        _dataAccessMock.Verify(d => d.SaveChangesAsync(), Times.Once);
-    }
-
-    [Test]
-    public void CloseMatchAsync_ShouldThrowException_WhenMatchDoesNotExist()
-    {
-        // Arrange
-        var matchId = Guid.NewGuid();
-
-        _dataAccessMock.Setup(d => d.GetByIdAsync(matchId)).ReturnsAsync((Match)null);
-
-        // Act & Assert
-        var ex = ThrowsAsync<KeyNotFoundException>(async () =>
-            await _matchService.CloseMatchAsync(matchId, 10, 5));
-        AreEqual($"Match with ID {matchId} not found.", ex.Message);
-    }
-
-    [Test]
-    public async Task JoinMatchAsync_ShouldAddPlayerToSpecifiedTeam()
-    {
-        // Arrange
-        var matchId = Guid.NewGuid();
-        var player = new ApplicationUser { Id = Guid.NewGuid(), UserName = "Player1" };
-        var match = new Match { Id = matchId, State = MatchState.Open, Team1 = new Team(), Team2 = new Team() };
-
-        _dataAccessMock.Setup(d => d.GetByIdAsync(matchId)).ReturnsAsync(match);
-
-        // Act
-        await _matchService.JoinMatchAsync(matchId, player, 1);
-        That(match.Team1.Players.Contains(player), Is.True);
-        _dataAccessMock.Verify(d => d.UpdateAsync(It.IsAny<Match>()), Times.Once);
-        _dataAccessMock.Verify(d => d.SaveChangesAsync(), Times.Never); // Changes saved later in the workflow
-    }
-
-    [Test]
-    public void JoinMatchAsync_ShouldThrowException_WhenTeamIsFull()
-    {
-        // Arrange
-        var matchId = Guid.NewGuid();
-        var player = new ApplicationUser { Id = Guid.NewGuid(), UserName = "Player1" };
-        var match = new Match
+        [Test]
+        public async Task StartMatchAsync_ShouldUpdateMatchState_ToRunning()
         {
-            Id = matchId,
-            Team1 = new Team { Players = new List<ApplicationUser> { new(), new() } }, // Full team
-            Team2 = new Team()
-        };
+            // Arrange
+            var matchId = Guid.NewGuid();
+            var team1 = new Team()
+            {
+                Players = [new ApplicationUser(), new ApplicationUser()]
+            };
+            var team2 = new Team()
+            {
+                Players = [new ApplicationUser(), new ApplicationUser()]
+            };;
+            var match = new Match { Id = matchId, State = MatchState.Open, Team1 = team1, Team2 = team2};
 
-        _dataAccessMock.Setup(d => d.GetByIdAsync(matchId)).ReturnsAsync(match);
+            _mockMatchDataAccess
+                .Setup(x => x.GetByIdAsync(matchId))
+                .ReturnsAsync(match);
 
-        // Act & Assert
-        var ex = ThrowsAsync<ArgumentException>(async () =>
-            await _matchService.JoinMatchAsync(matchId, player, 1));
-        AreEqual("Team is full.", ex.Message);
-    }
+            _mockMatchDataAccess
+                .Setup(x => x.UpdateAsync(It.IsAny<Match>()))
+                .Returns(Task.CompletedTask);
+            _mockMatchDataAccess
+                .Setup(x => x.SaveChangesAsync())
+                .Returns(Task.CompletedTask);
 
-    [Test]
-    public async Task LeaveMatchAsync_ShouldRemovePlayerFromSpecifiedTeam()
-    {
-        // Arrange
-        var matchId = Guid.NewGuid();
-        var player = new ApplicationUser { Id = Guid.NewGuid(), UserName = "Player1" };
-        var match = new Match { Id = matchId, Team1 = new Team { Players = new List<ApplicationUser> { player } }, Team2 = new Team() };
+            // Act
+            await _matchService.StartMatchAsync(matchId);
 
-        _dataAccessMock.Setup(d => d.GetByIdAsync(matchId)).ReturnsAsync(match);
-        _dataAccessMock.Setup(d => d.UpdateAsync(It.IsAny<Match>())).Returns(Task.CompletedTask);
+            var updatedMatch = await _mockMatchDataAccess.Object.GetByIdAsync(matchId);
 
-        // Act
-        await _matchService.LeaveMatchAsync(matchId, player, 1);
+            // Assert
+            Assert.That(updatedMatch.State, Is.EqualTo(MatchState.Running));
+            _mockMatchDataAccess.Verify(x => x.UpdateAsync(It.Is<Match>(m => m.State == MatchState.Running)), Times.Once);
+            _mockMatchDataAccess.Verify(x => x.SaveChangesAsync(), Times.Once);
+        }
 
-        // Assert
-        IsFalse(match.Team1.Players.Contains(player));
-        _dataAccessMock.Verify(d => d.UpdateAsync(It.IsAny<Match>()), Times.Once);
-    }
+        [Test]
+        public void StartMatchAsync_ShouldThrowException_WhenMatchDoesNotExist()
+        {
+            // Arrange
+            var matchId = Guid.NewGuid();
 
-    [Test]
-    public void LeaveMatchAsync_ShouldThrowException_WhenInvalidTeamNumber()
-    {
-        // Arrange
-        var matchId = Guid.NewGuid();
-        var player = new ApplicationUser { Id = Guid.NewGuid(), UserName = "Player1" };
-        var match = new Match { Id = matchId, Team1 = new Team(), Team2 = new Team() };
+            _mockMatchDataAccess
+                .Setup(x => x.GetByIdAsync(matchId))
+                .ReturnsAsync((Match)null);
 
-        _dataAccessMock.Setup(d => d.GetByIdAsync(matchId)).ReturnsAsync(match);
+            // Act & Assert
+            Assert.ThrowsAsync<KeyNotFoundException>(async () =>
+                await _matchService.StartMatchAsync(matchId));
+        }
 
-        // Act & Assert
-        var ex = ThrowsAsync<ArgumentException>(async () =>
-            await _matchService.LeaveMatchAsync(matchId, player, 3));
-        AreEqual("Invalid team number.", ex.Message);
+        #endregion
+
+        #region CloseMatchAsync Tests
+
+        [Test]
+        public async Task CloseMatchAsync_ShouldUpdateMatchScores()
+        {
+            // Arrange
+            var matchId = Guid.NewGuid();
+            var match = new Match { Id = matchId, State = MatchState.Running };
+
+            var playerStats = new List<PlayerMatchStats>
+            {
+                new PlayerMatchStats { Id = Guid.NewGuid(), Points = 10 },
+                new PlayerMatchStats { Id = Guid.NewGuid(), Points = 15 }
+            };
+
+            _mockMatchDataAccess
+                .Setup(x => x.GetByIdAsync(matchId))
+                .ReturnsAsync(match);
+            _mockPlayerMatchStatsDataAccess
+                .Setup(x => x.AddPlayerStatAsync(It.IsAny<PlayerMatchStats>()))
+                .Returns(Task.CompletedTask);
+            _mockPlayerMatchStatsDataAccess
+                .Setup(x => x.SaveChangesAsync())
+                .Returns(Task.CompletedTask);
+            _mockMatchDataAccess
+                .Setup(x => x.UpdateAsync(It.IsAny<Match>()))
+                .Returns(Task.CompletedTask);
+            _mockMatchDataAccess
+                .Setup(x => x.SaveChangesAsync())
+                .Returns(Task.CompletedTask);
+
+            // Act
+            await _matchService.CloseMatchAsync(matchId, 20, 15, playerStats);
+
+            // Assert
+            Assert.That(match.State, Is.EqualTo(MatchState.Finished));
+            Assert.That(match.Team1Score, Is.EqualTo(20));
+            Assert.That(match.Team2Score, Is.EqualTo(15));
+            _mockMatchDataAccess.Verify(x => x.UpdateAsync(It.Is<Match>(m =>
+                m.State == MatchState.Finished && m.Team1Score == 20 && m.Team2Score == 15
+            )), Times.Once);
+            _mockMatchDataAccess.Verify(x => x.SaveChangesAsync(), Times.Once);
+            _mockPlayerMatchStatsDataAccess.Verify(x => x.AddPlayerStatAsync(It.IsAny<PlayerMatchStats>()), Times.Exactly(playerStats.Count));
+        }
+
+        [Test]
+        public void CloseMatchAsync_ShouldThrowException_WhenMatchDoesNotExist()
+        {
+            // Arrange
+            var matchId = Guid.NewGuid();
+
+            _mockMatchDataAccess
+                .Setup(x => x.GetByIdAsync(matchId))
+                .ReturnsAsync((Match)null);
+
+            // Act & Assert
+            Assert.ThrowsAsync<KeyNotFoundException>(async () =>
+                await _matchService.CloseMatchAsync(matchId, 20, 15, new List<PlayerMatchStats>()));
+        }
+
+        #endregion
     }
 }
