@@ -27,7 +27,7 @@ namespace KickStatsTests.Services
 
             // Initialize service with mocks
             _matchService = new MatchService(
-                _mockMatchDataAccess.Object, _mockPlayTableDataAccess.Object
+                _mockMatchDataAccess.Object, _mockPlayTableDataAccess.Object, _mockPlayerMatchStatsDataAccess.Object
             );
         }
 
