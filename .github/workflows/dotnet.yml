@@ -38,6 +38,7 @@ jobs:
           path: KickStatsTests/TestResults/test-results.trx    # Path to test results
           reporter: dotnet-trx        # Format of test results
   publish:
+    if: github.event.pull_request.merged == true
     needs: unit-tests
     name: Build Container
     runs-on: ubuntu-latest
