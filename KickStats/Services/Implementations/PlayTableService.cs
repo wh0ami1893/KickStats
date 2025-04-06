@@ -2,14 +2,11 @@ using KickStats.Data.Models;
 using KickStats.Repositories.Interfaces;
 using KickStats.Services.Interfaces;
 
-public class PlayTableService : IPlayTableService
-{
-    private readonly IPlayTableDataAccess _playTableDataAccess;
+namespace KickStats.Services.Implementations;
 
-    public PlayTableService(IPlayTableDataAccess playTableDataAccess)
-    {
-        _playTableDataAccess = playTableDataAccess ?? throw new ArgumentNullException(nameof(playTableDataAccess));
-    }
+public class PlayTableService(IPlayTableDataAccess playTableDataAccess) : IPlayTableService
+{
+    private readonly IPlayTableDataAccess _playTableDataAccess = playTableDataAccess ?? throw new ArgumentNullException(nameof(playTableDataAccess));
 
     public async Task<PlayTable> CreatePlayTableAsync(string name)
     {
@@ -63,7 +60,4 @@ public class PlayTableService : IPlayTableService
     {
         return await _playTableDataAccess.GetMatchesForPlayTableAsync(playTableId);
     }
-
-
-
 }

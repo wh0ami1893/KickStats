@@ -13,6 +13,7 @@ namespace KickStats.Data
         public DbSet<Match> Matches { get; set; }
         public DbSet<PlayTable> PlayTables { get; set; }
         public DbSet<Team> Teams { get; set; }
+        public DbSet<PlayerMatchStats> PlayerMatchStats { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
@@ -37,7 +38,7 @@ namespace KickStats.Data
             builder.Entity<Match>(entity =>
             {
                 entity.HasKey(m => m.Id);
-                entity.Property(m => m.MatchDate).IsRequired();
+                entity.Property(m => m.StartTime).IsRequired();
                 entity.Property(m => m.EndTime).IsRequired();
 
                 entity.HasOne(m => m.PlayTable)
@@ -96,6 +97,26 @@ namespace KickStats.Data
                     .WithOne()
                     .OnDelete(DeleteBehavior.Cascade);
             });
+
+
+            builder.Entity<PlayerMatchStats>()
+                .HasOne(pms => pms.Match)
+                .WithMany(m => m.PlayerStats)
+                .HasForeignKey(pms => pms.MatchId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // PlayerMatchStats -> ApplicationUser (Many-to-One)
+            builder.Entity<PlayerMatchStats>()
+                .HasOne(pms => pms.Player)
+                .WithMany(u => u.MatchStats)
+                .HasForeignKey(pms => pms.PlayerId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // Additional Configurations - Optional Example:
+            // - Required fields
+            builder.Entity<PlayerMatchStats>()
+                .Property(pms => pms.Points)
+                .IsRequired();
 
 
         }

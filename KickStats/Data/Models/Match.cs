@@ -6,8 +6,9 @@ namespace KickStats.Data.Models
     {
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public Guid Id { get; set; }
-        public DateTime MatchDate { get; set; }
+        public DateTime StartTime { get; set; }
         public DateTime EndTime { get; set; }
+        public MatchState State { get; set; }
 
         public Guid PlayTableId { get; set; }
         public PlayTable PlayTable { get; set; } = null!;
@@ -20,5 +21,10 @@ namespace KickStats.Data.Models
 
         public int Team1Score { get; set; }
         public int Team2Score { get; set; }
+
+        public ICollection<PlayerMatchStats> PlayerStats { get; set; } = new List<PlayerMatchStats>();
+
     }
+
+
 }
