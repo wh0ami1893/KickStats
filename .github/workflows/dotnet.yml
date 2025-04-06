@@ -22,7 +22,8 @@ jobs:
       run: dotnet restore
     - name: Build
       run: dotnet build --no-restore
-  unit-test:
+  unit-tests:
+    needs: build
     name: Test
     runs-on: ubuntu-latest
     steps:
@@ -36,6 +37,7 @@ jobs:
           path: KickStatsTests/TestResults/test-results.trx    # Path to test results
           reporter: dotnet-trx        # Format of test results
   publish:
+    needs: unit-tests
     name: Build Container
     runs-on: ubuntu-latest
     steps:
