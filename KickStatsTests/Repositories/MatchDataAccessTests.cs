@@ -34,11 +34,38 @@ public class MatchDataAccessTests
     [Test]
     public async Task GetByIdAsync_ShouldReturnMatch_WhenMatchExists()
     {
-        // Arrange
+        var playTable = new PlayTable()
+        {
+            Id = Guid.NewGuid(),
+            Name = "Test"
+        };
+        var team1 = new Team()
+        {
+            Id = Guid.NewGuid(),
+            Players = new List<ApplicationUser>()
+            {
+                new ApplicationUser(),
+                new ApplicationUser()
+            }
+        };
+        var team2 = new Team()
+        {
+            Id = Guid.NewGuid(),
+            Players = new List<ApplicationUser>()
+            {
+                new ApplicationUser(),
+                new ApplicationUser()
+            }
+        };
+        _dbContext.PlayTables.Add(playTable);
+
         var matchId = Guid.NewGuid();
         var match = new Match
         {
-            Id = matchId
+            Id = matchId,
+            PlayTable = playTable,
+            Team1 = team1,
+            Team2 = team2
         };
         _dbContext.Matches.Add(match);
         await _dbContext.SaveChangesAsync();

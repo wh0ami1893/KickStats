@@ -5,7 +5,7 @@ using KickStats.Services.Interfaces;
 
 namespace KickStats.Services.Implementations;
 
-public class MatchService(IMatchDataAccess matchDataAccess, IPlayTableDataAccess playTableDataAccess ) : IMatchService
+public class MatchService(IMatchDataAccess matchDataAccess, IPlayTableDataAccess playTableDataAccess, IPlayerMatchStatsDataAccess matchStatsDataAccess ) : IMatchService
 {
     public async Task<Match> CreateMatchAsync(Guid playTableId, DateTime matchDate)
     {
@@ -81,6 +81,13 @@ public class MatchService(IMatchDataAccess matchDataAccess, IPlayTableDataAccess
         match.Team2Score = team2Score;
         match.PlayerStats = matchStats;
         match.State = MatchState.Finished;
+
+        foreach (var matchStat in matchStats)
+        {
+           await matchStatsDataAccess.AddPlayerStatAsync(matchStat);
+        }
+        await matchStatsDataAccess.SaveChangesAsync();
+
         await matchDataAccess.UpdateAsync(match);
         await matchDataAccess.SaveChangesAsync();
     }
