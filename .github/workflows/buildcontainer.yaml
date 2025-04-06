@@ -1,30 +1,26 @@
+name: Build & Push Container
+
 on:
   pull_request:
     types:
       - closed
-
 jobs:
-  build-image:
+  build-push-image:
     if: github.event.pull_request.merged == true
-    name: Build Image
+    name: Build & Push Image
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - name: Build the Docker image
         run: docker build . --file Dockerfile --tag ghcr.io/wh0ami1893/kickstats:latest --tag ghcr.io/wh0ami1893/kickstats:$(date +%s)
-  push-image:
-        needs: build-image
-        runs-on: ubuntu-latest
-        steps:
-          - name: 'Checkout GitHub Action'
-            uses: actions/checkout@main
-          - name: 'Login to GitHub Container Registry'
-            uses: docker/login-action@v1
-            with:
-              registry: ghcr.io
-              username: ${{github.actor}}
-              password: ${{secrets.GITHUB_TOKEN}}
-
-          - name: 'Build KickStats Image'
-            run: docker push ghcr.io/wh0ami1893/kickstats:latest
+      - name: 'Checkout GitHub Action'
+        uses: actions/checkout@main
+      - name: 'Login to GitHub Container Registry'
+        uses: docker/login-action@v1
+        with:
+          registry: ghcr.io
+          username: ${{github.actor}}
+          password: ${{secrets.GITHUB_TOKEN}}
+      - name: Push Image'
+        run: docker push ghcr.io/wh0ami1893/kickstats:latest
 
