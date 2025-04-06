@@ -35,3 +35,10 @@ jobs:
           name: NUnit Tests            # Name of the check run which will be created
           path: KickStatsTests/TestResults/test-results.trx    # Path to test results
           reporter: dotnet-trx        # Format of test results
+  publish:
+    name: Build Container
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build the Docker image
+        run: docker build . --file Dockerfile --tag my-image-name:$(date +%s)
