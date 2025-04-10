@@ -7,7 +7,7 @@ on:
       - closed
 jobs:
   build-push-image:
-    if: github.event.pull_request.merged == true
+    if: github.event.pull_request.merged == true || github.event_name == 'workflow_dispatch'
     name: Build & Push Image
     runs-on: ubuntu-latest
     steps:
