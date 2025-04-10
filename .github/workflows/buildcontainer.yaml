@@ -1,6 +1,7 @@
 name: Build & Push Container
-
+  
 on:
+  workflow_dispatch:
   pull_request:
     types:
       - closed
@@ -12,7 +13,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Build the Docker image
-        run: docker build . --file Dockerfile --tag ghcr.io/wh0ami1893/kickstats:latest --tag ghcr.io/wh0ami1893/kickstats:$(date +%s)
+        run: docker build . --file Dockerfile --tag ghcr.io/wh0ami1893/kickstats:latest --tag ghcr.io/wh0ami1893/kickstats:${{ github.ref_name }}
       - name: 'Checkout GitHub Action'
         uses: actions/checkout@main
       - name: 'Login to GitHub Container Registry'
@@ -24,6 +25,6 @@ jobs:
       - name: Push Image'
         run: |
               docker push ghcr.io/wh0ami1893/kickstats:latest
-              docker push ghcr.io/wh0ami1893/kickstats:$(date +%s)
+              docker push ghcr.io/wh0ami1893/kickstats:${{ github.ref_name }}
         
 
