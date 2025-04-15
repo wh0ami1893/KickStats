@@ -1,92 +1,101 @@
-﻿@implements IDisposable
+﻿@using KickStats.Components.Account
+@using KickStats.Data
+@using Microsoft.AspNetCore.Components.Authorization
+@using Microsoft.AspNetCore.Identity
 
 @inject NavigationManager NavigationManager
+@inject IdentityUserAccessor UserAccessor
+@inject UserManager<ApplicationUser> UserManager;
+@inject IHttpContextAccessor HttpContextAccessor
 
-<div class="top-row ps-3 navbar navbar-dark">
-    <div class="container-fluid">
-        <a class="navbar-brand" href="">KickStats</a>
-    </div>
-</div>
 
+<a class="navbar-brand" href=""></a>
 <input type="checkbox" title="Navigation menu" class="navbar-toggler"/>
 
 <div class="nav-scrollable" onclick="document.querySelector('.navbar-toggler').click()">
-    <nav class="flex-column">
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
-                <span class="bi bi-house-door-fill-nav-menu" aria-hidden="true"></span> Home
-            </NavLink>
-        </div>
-
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="counter">
-                <span class="bi bi-plus-square-fill-nav-menu" aria-hidden="true"></span> Counter
-            </NavLink>
-        </div>
-
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="weather">
-                <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Weather
-            </NavLink>
-        </div>
-
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="auth">
-                <span class="bi bi-lock-nav-menu" aria-hidden="true"></span> Auth Required
-            </NavLink>
-        </div>
-
+    
+    <nav class="text-center">
         <AuthorizeView>
             <Authorized>
-                <div class="nav-item px-3">
+        <div class="nav-item ">
+            <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
+               
+                <div class="nav-link-content">
+                    <i class="fa-regular fa-futbol"></i> 
+                    <div>Matches</div>
+                </div>
+            </NavLink>
+        </div>
+
+        <div class="nav-item">
+            <NavLink class="nav-link" href="table">
+                <div class="nav-link-content">
+                    <i class="fa-solid fa-list"></i>
+                    <div>PlayersTable</div>
+                </div>
+            </NavLink>
+        </div>
+
+        <div class="nav-item ">
+            <NavLink class="nav-link" href="bets">
+                <div class="nav-link-content">
+                    <i class="fa-solid fa-sack-dollar"></i> 
+                    <div>Bets</div>
+                </div>
+                
+            </NavLink>
+        </div>
+
+            <div class="nav-item ">
+                <NavLink class="nav-link" href="settings">
+                    <div class="nav-link-content">
+                        <i class="fa-solid fa-gear"></i>
+                        <div>Settings</div>
+                    </div>
+                </NavLink>
+            </div>
+        <div class="authorization-block">
+                <div class="nav-item ">
                     <NavLink class="nav-link" href="Account/Manage">
-                        <span class="bi bi-person-fill-nav-menu" aria-hidden="true"></span> @context.User.Identity?.Name
+                        <div class="nav-link-content">
+                            @{
+                          var user =  UserAccessor.GetRequiredUserAsync(HttpContextAccessor.HttpContext).Result;
+                          <span class="userDisplay" aria-hidden="true">@user.UserName</span>
+                        }
+                        </div>
                     </NavLink>
                 </div>
-                <div class="nav-item px-3">
-                    <form action="Account/Logout" method="post">
-                        <AntiforgeryToken/>
-                        <input type="hidden" name="ReturnUrl" value="@currentUrl"/>
-                        <button type="submit" class="nav-link">
-                            <span class="bi bi-arrow-bar-left-nav-menu" aria-hidden="true"></span> Logout
-                        </button>
-                    </form>
-                </div>
+        <div class="nav-item">
+            <form action="Account/Logout" method="post">
+                <AntiforgeryToken />
+                <input type="hidden" name="ReturnUrl" value="" />
+                <button type="submit" class="nav-link logout-button">
+                    <div class="logout-button-content">
+                        Log out
+                    </div>
+                </button>
+            </form>
+        </div>
+        </div>
             </Authorized>
             <NotAuthorized>
-                <div class="nav-item px-3">
+                <div class="nav-item">
                     <NavLink class="nav-link" href="Account/Register">
-                        <span class="bi bi-person-nav-menu" aria-hidden="true"></span> Register
+                        <div class="nav-link-content">
+                            <span class="" aria-hidden="true"></span> Register
+                        </div>
                     </NavLink>
                 </div>
-                <div class="nav-item px-3">
-                    <NavLink class="nav-link" href="Account/Login">
-                        <span class="bi bi-person-badge-nav-menu" aria-hidden="true"></span> Login
-                    </NavLink>
+                
+                <div class="nav-item">
+                <NavLink class="nav-link" href="Account/Login">
+                    <div class="nav-link-content">
+                        <span class="" aria-hidden="true"></span> Login
+                    </div>
+                </NavLink>
                 </div>
             </NotAuthorized>
         </AuthorizeView>
+       
     </nav>
 </div>
-
-@code {
-    private string? currentUrl;
-
-    protected override void OnInitialized()
-    {
-        currentUrl = NavigationManager.ToBaseRelativePath(NavigationManager.Uri);
-        NavigationManager.LocationChanged += OnLocationChanged;
-    }
-
-    private void OnLocationChanged(object? sender, LocationChangedEventArgs e)
-    {
-        currentUrl = NavigationManager.ToBaseRelativePath(e.Location);
-        StateHasChanged();
-    }
-
-    public void Dispose()
-    {
-        NavigationManager.LocationChanged -= OnLocationChanged;
-    }
-
-}

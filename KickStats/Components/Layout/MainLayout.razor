@@ -1,4 +1,8 @@
-﻿@inherits LayoutComponentBase
+﻿@using System.Net
+@using Microsoft.AspNetCore.Identity
+@using Microsoft.AspNetCore.Components.Authorization
+@inherits LayoutComponentBase
+@inject NavigationManager NavigationManager
 
 <div class="page">
     <div class="sidebar">
@@ -6,12 +10,8 @@
     </div>
 
     <main>
-        <div class="top-row px-4">
-            <a href="https://learn.microsoft.com/aspnet/core/" target="_blank">About</a>
-        </div>
-
-        <article class="content px-4">
-            @Body
+        <article class="notAuthorizedContent px-4">
+                @Body
         </article>
     </main>
 </div>
