@@ -484,3 +484,8 @@ $RECYCLE.BIN/
 *.swp
 
 *.db*
+
+**.development.json
+
+
+
